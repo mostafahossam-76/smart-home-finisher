@@ -21,7 +21,7 @@ import {
   saveTasks,
   Project,
   FinishingTask,
-} from './projectStorage';
+} from '../projectStorage';
 
 type Props = {
   onCreateProject: () => void;

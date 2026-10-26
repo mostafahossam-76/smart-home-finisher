@@ -9,9 +9,9 @@ import {
   View,
 } from 'react-native';
 
-import DashboardScreen from './DashboardScreen';
-import CreateProjectScreen from './create-project';
-import FinishingTasksScreen from './finishing-tasks';
+import DashboardScreen from './screens 3/DashboardScreen';
+import CreateProjectScreen from './screens 3/create-project';
+import FinishingTasksScreen from './screens 3/finishing-tasks';
 
 import CostEstimator from './screens/CostEstimator';
 import MaterialComparison from './screens/MaterialComparison';
