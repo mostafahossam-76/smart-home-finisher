@@ -1,151 +1,134 @@
 
-import React, { useState } from "react";
-import { View, Text, Pressable, StyleSheet } from "react-native";
+import React, { useState } from 'react';
+import {
+  SafeAreaView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
-import CostEstimator from "./screens/CostEstimator";
-import MaterialComparison from "./screens/MaterialComparison";
-import ProgressTracker from "./screens/ProgressTracker";
+import DashboardScreen from './DashboardScreen';
+import CreateProjectScreen from './create-project';
+import FinishingTasksScreen from './finishing-tasks';
 
-type Page = "cost" | "compare" | "progress";
+import CostEstimator from './screens/CostEstimator';
+import MaterialComparison from './screens/MaterialComparison';
+import ProgressTracker from './screens/ProgressTracker';
+
+type Screen =
+  | 'Projects'
+  | 'Create'
+  | 'Tasks'
+  | 'Cost'
+  | 'Compare'
+  | 'Progress';
 
 export default function App() {
-  const [activePage, setActivePage] = useState<Page>("cost");
+  const [screen, setScreen] = useState<Screen>('Projects');
+  const [taskProjectId, setTaskProjectId] = useState<string | undefined>(
+    undefined
+  );
+
+  const openTasks = (projectId: string) => {
+    setTaskProjectId(projectId);
+    setScreen('Tasks');
+  };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.app}>
+      <StatusBar barStyle="dark-content" />
+
       <View style={styles.content}>
-        {activePage === "cost" ? (
-          <CostEstimator />
-        ) : activePage === "compare" ? (
-          <MaterialComparison />
-        ) : (
-          <ProgressTracker />
+        {screen === 'Projects' && (
+          <DashboardScreen
+            onCreateProject={() => setScreen('Create')}
+            onOpenTasks={openTasks}
+          />
         )}
+
+        {screen === 'Create' && (
+          <CreateProjectScreen
+            onCreated={() => setScreen('Projects')}
+            onCancel={() => setScreen('Projects')}
+          />
+        )}
+
+        {screen === 'Tasks' && (
+          <FinishingTasksScreen initialProjectId={taskProjectId} />
+        )}
+
+        {screen === 'Cost' && <CostEstimator />}
+
+        {screen === 'Compare' && <MaterialComparison />}
+
+        {screen === 'Progress' && <ProgressTracker />}
       </View>
 
-      <View style={styles.tabBar}>
-        <Pressable
-          onPress={() => setActivePage("cost")}
-          style={[
-            styles.tab,
-            activePage === "cost" && styles.activeTab,
-          ]}
-        >
-          <Text
-            style={[
-              styles.tabIcon,
-              activePage === "cost" && styles.activeText,
-            ]}
+      <View style={styles.nav}>
+        {(
+          [
+            ['Projects', 'My Projects'],
+            ['Create', 'Create Project'],
+            ['Tasks', 'Finishing Tasks'],
+            ['Cost', 'Cost Estimator'],
+            ['Compare', 'Compare'],
+            ['Progress', 'Progress'],
+          ] as [Screen, string][]
+        ).map(([value, label]) => (
+          <TouchableOpacity
+            key={value}
+            style={styles.navItem}
+            onPress={() => setScreen(value)}
           >
-            EGP
-          </Text>
-
-          <Text
-            style={[
-              styles.tabLabel,
-              activePage === "cost" && styles.activeText,
-            ]}
-          >
-            Cost Estimator
-          </Text>
-        </Pressable>
-
-        <Pressable
-          onPress={() => setActivePage("compare")}
-          style={[
-            styles.tab,
-            activePage === "compare" && styles.activeTab,
-          ]}
-        >
-          <Text
-            style={[
-              styles.tabIcon,
-              activePage === "compare" && styles.activeText,
-            ]}
-          >
-            ⇄
-          </Text>
-
-          <Text
-            style={[
-              styles.tabLabel,
-              activePage === "compare" && styles.activeText,
-            ]}
-          >
-            Compare
-          </Text>
-        </Pressable>
-
-        <Pressable
-          onPress={() => setActivePage("progress")}
-          style={[
-            styles.tab,
-            activePage === "progress" && styles.activeTab,
-          ]}
-        >
-          <Text
-            style={[
-              styles.tabIcon,
-              activePage === "progress" && styles.activeText,
-            ]}
-          >
-            %
-          </Text>
-
-          <Text
-            style={[
-              styles.tabLabel,
-              activePage === "progress" && styles.activeText,
-            ]}
-          >
-            Progress
-          </Text>
-        </Pressable>
+            <Text
+              style={[
+                styles.navText,
+                screen === value && styles.navTextActive,
+              ]}
+            >
+              {label}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  app: {
     flex: 1,
-    backgroundColor: "#F6F7F2",
+    backgroundColor: '#F5F7F2',
   },
   content: {
     flex: 1,
   },
-  tabBar: {
-    flexDirection: "row",
-    backgroundColor: "#FFFFFF",
+  nav: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
-    paddingTop: 10,
-    paddingBottom: 22,
-    paddingHorizontal: 8,
-  },
-  tab: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
+    borderTopColor: '#DCE4DC',
+    backgroundColor: '#FFFFFF',
     paddingVertical: 8,
-    borderRadius: 14,
+    paddingHorizontal: 5,
   },
-  activeTab: {
-    backgroundColor: "#EAF1E7",
+  navItem: {
+    flexGrow: 1,
+    flexBasis: '30%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 2,
   },
-  tabIcon: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#737B73",
-    marginBottom: 4,
+  navText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#78847A',
+    textAlign: 'center',
   },
-  tabLabel: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: "#737B73",
-    textAlign: "center",
-  },
-  activeText: {
-    color: "#203B2A",
+  navTextActive: {
+    color: '#286747',
   },
 });

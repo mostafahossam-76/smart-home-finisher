@@ -1,5 +1,4 @@
-// This is an optional configuration file used primarily for debugging purposes when reporting issues.
-// It is safe to delete this file as it does not affect the functionality of your application.
+
 {
   "cesVersion": "2.23.3",
   "projectName": "my-expo-app",
@@ -20,12 +19,12 @@
   },
   "packageManager": {
     "type": "npm",
-    "version": "11.12.1"
+    "version": "11.19.1"
   },
   "os": {
-    "type": "Darwin",
-    "platform": "darwin",
-    "arch": "arm64",
-    "kernelVersion": "27.0.0"
+    "type": "Windows_NT",
+    "platform": "win32",
+    "arch": "x64",
+    "kernelVersion": "10.0.26200"
   }
 }
