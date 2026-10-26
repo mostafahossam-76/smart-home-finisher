@@ -13,7 +13,7 @@ import {
   loadProjects,
   saveProjects,
   Project,
-} from './projectStorage';
+} from '../projectStorage';
 
 type Props = {
   onCreated?: (project: Project) => void;
