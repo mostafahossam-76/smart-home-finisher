@@ -1,7 +1,9 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
+
 import {
   Alert,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -30,6 +32,14 @@ const DEFAULT_TASKS = [
   'Install flooring',
   'Final inspection',
 ];
+
+function showMessage(title: string, message: string) {
+  if (Platform.OS === 'web') {
+    window.alert(`${title}\n\n${message}`);
+  } else {
+    Alert.alert(title, message);
+  }
+}
 
 function formatDeadline(value: string): string {
   if (!/^\d{8}$/.test(value)) return value;
@@ -81,14 +91,14 @@ export default function FinishingTasksScreen({
           : savedProjects[0]?.id || '';
       });
     } catch {
-      Alert.alert('Error', 'Could not load projects and tasks.');
+      showMessage('Error', 'Could not load projects and tasks.');
     } finally {
       setLoading(false);
     }
   }, [initialProjectId]);
 
   useEffect(() => {
-    refresh();
+    void refresh();
   }, [refresh]);
 
   const tasks = selectedProjectId
@@ -106,17 +116,17 @@ export default function FinishingTasksScreen({
 
   const addTask = async () => {
     if (!selectedProjectId) {
-      Alert.alert('No project', 'Please create a project first.');
+      showMessage('No project', 'Please create a project first.');
       return;
     }
 
     if (!taskTitle.trim()) {
-      Alert.alert('Missing task name', 'Enter a task name.');
+      showMessage('Missing task name', 'Enter a task name.');
       return;
     }
 
     if (deadline && deadline.length !== 8) {
-      Alert.alert(
+      showMessage(
         'Incomplete date',
         'Enter 8 digits in YYYYMMDD format, e.g. 20261215.'
       );
@@ -124,7 +134,7 @@ export default function FinishingTasksScreen({
     }
 
     if (deadline && !isValidDate(deadline)) {
-      Alert.alert(
+      showMessage(
         'Invalid date',
         'Enter a valid date, e.g. 20261215.'
       );
@@ -148,7 +158,7 @@ export default function FinishingTasksScreen({
       setTaskTitle('');
       setDeadline('');
     } catch {
-      Alert.alert('Error', 'Could not save the task.');
+      showMessage('Error', 'Could not save the task.');
     }
   };
 
@@ -165,35 +175,60 @@ export default function FinishingTasksScreen({
         [selectedProjectId]: updatedTasks,
       });
     } catch {
-      Alert.alert('Error', 'Could not update the task.');
+      showMessage('Error', 'Could not update the task.');
     }
   };
 
   const deleteTask = (taskId: string) => {
-    Alert.alert('Delete task', 'Are you sure you want to delete it?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await persist({
-              ...tasksByProject,
-              [selectedProjectId]: tasks.filter(
-                task => task.id !== taskId
-              ),
-            });
-          } catch {
-            Alert.alert('Error', 'Could not delete the task.');
-          }
+    const taskToDelete = tasks.find(task => task.id === taskId);
+    if (!taskToDelete) return;
+
+    const confirmDelete = () => {
+      void (async () => {
+        try {
+          const updatedTasks = {
+            ...tasksByProject,
+            [selectedProjectId]: tasks.filter(
+              task => task.id !== taskId
+            ),
+          };
+
+          await persist(updatedTasks);
+        } catch {
+          showMessage('Error', 'Could not delete the task.');
+        }
+      })();
+    };
+
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm(
+        `Delete "${taskToDelete.title}"? This action cannot be undone.`
+      );
+
+      if (confirmed) {
+        confirmDelete();
+      }
+
+      return;
+    }
+
+    Alert.alert(
+      'Delete task?',
+      `Are you sure you want to delete "${taskToDelete.title}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: confirmDelete,
         },
-      },
-    ]);
+      ]
+    );
   };
 
   const addSuggestedTasks = async () => {
     if (!selectedProjectId) {
-      Alert.alert('No project', 'Please create a project first.');
+      showMessage('No project', 'Please create a project first.');
       return;
     }
 
@@ -212,7 +247,7 @@ export default function FinishingTasksScreen({
       }));
 
     if (suggestions.length === 0) {
-      Alert.alert('Already added', 'All suggested tasks are present.');
+      showMessage('Already added', 'All suggested tasks are present.');
       return;
     }
 
@@ -222,7 +257,7 @@ export default function FinishingTasksScreen({
         [selectedProjectId]: [...tasks, ...suggestions],
       });
     } catch {
-      Alert.alert('Error', 'Could not add suggested tasks.');
+      showMessage('Error', 'Could not add suggested tasks.');
     }
   };
 
@@ -257,10 +292,7 @@ export default function FinishingTasksScreen({
         <>
           <Text style={styles.label}>Choose project</Text>
 
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-          >
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             {projects.map(project => (
               <TouchableOpacity
                 key={project.id}
@@ -381,7 +413,9 @@ export default function FinishingTasksScreen({
                   Number(digits.slice(0, 4)),
                   Number(digits.slice(4, 6)) - 1,
                   Number(digits.slice(6, 8)),
-                  23, 59, 59
+                  23,
+                  59,
+                  59
                 ) < new Date();
 
               return (
@@ -433,6 +467,8 @@ export default function FinishingTasksScreen({
                   <TouchableOpacity
                     style={styles.deleteButton}
                     onPress={() => deleteTask(task.id)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Delete ${task.title}`}
                   >
                     <Text style={styles.deleteText}>Delete</Text>
                   </TouchableOpacity>

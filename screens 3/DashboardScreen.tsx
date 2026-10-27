@@ -1,12 +1,10 @@
-import React, {
-  useCallback,
-  useEffect,
-  useState,
-} from 'react';
+
+import React, { useCallback, useEffect, useState } from 'react';
 
 import {
   ActivityIndicator,
   Alert,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -47,10 +45,14 @@ export default function DashboardScreen({
       setProjects(savedProjects);
       setTasksByProject(savedTasks);
     } catch {
-      Alert.alert(
-        'Could not load',
-        'Unable to load projects and progress.'
-      );
+      if (Platform.OS === 'web') {
+        window.alert('Unable to load projects and progress.');
+      } else {
+        Alert.alert(
+          'Could not load',
+          'Unable to load projects and progress.'
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -61,6 +63,48 @@ export default function DashboardScreen({
   }, [refresh]);
 
   const removeProject = (project: Project) => {
+    const deleteConfirmed = async () => {
+      try {
+        const updatedProjects = projects.filter(
+          item => item.id !== project.id
+        );
+
+        const updatedTasks = { ...tasksByProject };
+        delete updatedTasks[project.id];
+
+        await Promise.all([
+          saveProjects(updatedProjects),
+          saveTasks(updatedTasks),
+        ]);
+
+        setProjects(updatedProjects);
+        setTasksByProject(updatedTasks);
+      } catch {
+        if (Platform.OS === 'web') {
+          window.alert(
+            'The project could not be deleted. Please try again.'
+          );
+        } else {
+          Alert.alert(
+            'Delete failed',
+            'The project could not be deleted.'
+          );
+        }
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm(
+        `Delete "${project.name}" and its finishing tasks?`
+      );
+
+      if (confirmed) {
+        void deleteConfirmed();
+      }
+
+      return;
+    }
+
     Alert.alert(
       'Delete project?',
       `Delete "${project.name}" and its finishing tasks?`,
@@ -72,28 +116,8 @@ export default function DashboardScreen({
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: async () => {
-            try {
-              const updatedProjects = projects.filter(
-                item => item.id !== project.id
-              );
-
-              const updatedTasks = { ...tasksByProject };
-              delete updatedTasks[project.id];
-
-              await Promise.all([
-                saveProjects(updatedProjects),
-                saveTasks(updatedTasks),
-              ]);
-
-              setProjects(updatedProjects);
-              setTasksByProject(updatedTasks);
-            } catch {
-              Alert.alert(
-                'Delete failed',
-                'The project could not be deleted.'
-              );
-            }
+          onPress: () => {
+            void deleteConfirmed();
           },
         },
       ]
@@ -131,19 +155,13 @@ export default function DashboardScreen({
 
       <View style={styles.summaryRow}>
         <View style={styles.summaryCard}>
-          <Text style={styles.summaryNumber}>
-            {projects.length}
-          </Text>
+          <Text style={styles.summaryNumber}>{projects.length}</Text>
           <Text style={styles.summaryLabel}>Projects</Text>
         </View>
 
         <View style={styles.summaryCard}>
-          <Text style={styles.summaryNumber}>
-            {completedTotal}
-          </Text>
-          <Text style={styles.summaryLabel}>
-            Tasks completed
-          </Text>
+          <Text style={styles.summaryNumber}>{completedTotal}</Text>
+          <Text style={styles.summaryLabel}>Tasks completed</Text>
         </View>
       </View>
 
@@ -200,9 +218,7 @@ export default function DashboardScreen({
 
                   <Text style={styles.muted}>
                     {project.area} m² · {project.rooms} rooms
-                    {project.location
-                      ? ` · ${project.location}`
-                      : ''}
+                    {project.location ? ` · ${project.location}` : ''}
                   </Text>
                 </View>
               </View>
@@ -241,6 +257,8 @@ export default function DashboardScreen({
               <TouchableOpacity
                 style={styles.deleteButton}
                 onPress={() => removeProject(project)}
+                accessibilityRole="button"
+                accessibilityLabel={`Delete ${project.name}`}
               >
                 <Text style={styles.deleteText}>
                   Delete project
